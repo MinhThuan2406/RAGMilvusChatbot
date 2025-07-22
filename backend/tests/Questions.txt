@@ -1,0 +1,19 @@
+General (tests retrieval and summarization)
+Summarize the contents of TestDocument1.pdf.
+What are the main topics covered in FullToolsBreakdown.pdf?
+List the specifications mentioned in laptop_specs.txt.
+What is the subject of TestDocument2.docx?
+Extract the key points from TestDocument3.doc.
+
+Specific (tests detail extraction and context)
+According to TestDocument3.doc, what is a Genetic Algorithm?
+What are the main features of the laptop described in laptop_specs.txt?
+Does TestDocument1.pdf mention any algorithms? If so, which ones?
+What is the conclusion section in FullToolsBreakdown.pdf?
+Are there any requirements listed in TestDocument2.docx?
+
+File-specific (tests file_name context)
+Using only TestDocument3.doc, explain the application of GA algorithms.
+From laptop_specs.txt, what is the battery life of the laptop?
+What images are included in TestImage1.jpeg? (If any text is extracted)
+Summarize the introduction section of FullToolsBreakdown.pdf.

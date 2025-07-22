@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Downgrade pip to <24.1 for textract compatibility
+        run: python -m pip install "pip<24.1"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Start ChromaDB
+        run: |
+          docker run -d --name chromadb -p 8000:8000 chromadb/chroma:0.4.24
+
+      - name: Wait for ChromaDB to be ready
+        run: |
+          for i in {1..30}; do
+            if curl --fail http://localhost:8000/api/v2/heartbeat || curl --fail http://localhost:8000/api/v1/heartbeat; then
+              echo "ChromaDB is ready!"
+              exit 0
+            fi
+            echo "Waiting for ChromaDB..."
+            sleep 10
+          done
+          echo "ChromaDB did not become ready in time."
+          exit 1
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run tests
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+          PYTHONPATH: backend
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # pytest backend/tests
+          pytest backend/tests -m "not integration"
+
+      - name: Print ChromaDB logs
+        if: failure()
+        run: docker logs chromadb
+
+      - name: Debug ChromaDB health endpoint
+        run: |
+          curl -v http://localhost:8000/api/v2/heartbeat || curl -v http://localhost:8000/api/v1/heartbeat || curl -v http://localhost:8000/
