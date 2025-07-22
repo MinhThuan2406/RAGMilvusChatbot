@@ -7,12 +7,12 @@ import docx
 import pytesseract
 from PIL import Image
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from ..db.chroma_client import ChromaDBClient
+from ..db.milvus_client import MilvusDBClient
 from ..adapters.openai_adapter import OpenAIAdapter
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import threading        
-from chromadb.utils import embedding_functions
+from ..adapters.openai_adapter import OpenAIAdapter
 from ..core.config import settings
 
 logging.basicConfig(level=logging.INFO)
@@ -129,7 +129,7 @@ import asyncio
 
 class AsyncEmbeddingFunction:
     """
-    Wrapper for async embedding client compatible with ChromaDB.
+    Wrapper for async embedding client compatible with Milvus.
     Pass an embedding client object (e.g., OpenAIAdapter) that implements async create_embedding(text: str) -> list[float].
     """
     def __init__(self, client, name: str = "openai"):
@@ -137,7 +137,7 @@ class AsyncEmbeddingFunction:
         self._name = name
 
     def __call__(self, texts: list[str]) -> list[list[float]]:
-        # ChromaDB expects a synchronous callable. This wraps async embedding calls.
+        # Milvus expects a synchronous callable. This wraps async embedding calls.
         import asyncio
         async def get_embeddings():
             # Try embed_documents (batch) if available, else fallback to create_embedding per text
@@ -161,7 +161,7 @@ class AsyncEmbeddingFunction:
         else:
             return loop.run_until_complete(get_embeddings())
 
-    # Only a method, not a property, for ChromaDB compatibility
+    # Only a method, not a property, for Milvus compatibility
     def name(self):
         return self._name
 
@@ -186,8 +186,8 @@ class IngestionService:
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if not openai_api_key:
             raise RuntimeError("OPENAI_API_KEY is not set in the environment or .env file.")
-        self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(api_key=openai_api_key)
-        self.vector_db_client = ChromaDBClient(embedding_function=self.embedding_function)
+        self.embedding_function = OpenAIAdapter(api_key=openai_api_key)
+        self.vector_db_client = MilvusDBClient(embedding_function=self.embedding_function)
         self.document_processor = DocumentProcessor()
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -204,7 +204,7 @@ class IngestionService:
 
     async def ingest_document(self, file_path: str, file_name: str) -> Dict[str, Any]:
         """
-        Ingest a single document, skipping if already present in ChromaDB by filename (or hash).
+        Ingest a single document, skipping if already present in Milvus by filename (or hash).
         Now includes post-ingest verification, duplicate detection, and improved messaging.
         """
         if not os.path.exists(file_path):
@@ -218,15 +218,15 @@ class IngestionService:
         try:
             # Check for existing document by filename (or hash)
             try:
-                existing = self.vector_db_client.collection.get(where={"source": file_name}, limit=1)
-                if existing and existing.get("ids"):
+                existing = self.vector_db_client.get_documents_by_metadata({"source": file_name}, limit=1)
+                if existing and len(existing) > 0:
                     logger.info(f"[INGESTION] Document {file_name} already exists in DB. Skipping.")
                     return {
                         "status": "skipped",
                         "message": f"Document {file_name} already exists in database. Skipped. (No duplicate ingested)",
                         "file_name": file_name,
                         "duplicate": True,
-                        "existing_ids": existing.get("ids", [])
+                        "existing_ids": [doc.get("id") for doc in existing]
                     }
             except Exception as e:
                 logger.warning(f"[INGESTION] Could not check for existing document: {e}")
@@ -261,17 +261,17 @@ class IngestionService:
             try:
                 add_result = self.vector_db_client.add_documents(documents=chunks, metadatas=metadatas, ids=ids)
             except Exception as e:
-                logger.error(f"Error adding documents to ChromaDB for {file_name}: {e}")
-                return {"status": "error", "message": f"Failed to add to ChromaDB: {str(e)}", "file_name": file_name}
+                logger.error(f"Error adding documents to Milvus for {file_name}: {e}")
+                return {"status": "error", "message": f"Failed to add to Milvus: {str(e)}", "file_name": file_name}
 
             if not add_result:
-                logger.error(f"ChromaDBClient.add_documents returned False for {file_name}. Possible duplicate or insertion error.")
+                logger.error(f"MilvusDBClient.add_documents returned False for {file_name}. Possible duplicate or insertion error.")
                 # Check if all IDs already exist (true duplicate)
                 try:
-                    verify_result = self.vector_db_client.collection.get(ids=ids)
+                    verify_result = self.vector_db_client.get_documents_by_ids(ids)
                     found_ids = verify_result.get("ids", []) if verify_result else []
                     if set(found_ids) == set(ids):
-                        logger.info(f"All chunks for {file_name} already exist in ChromaDB. Duplicate detected.")
+                        logger.info(f"All chunks for {file_name} already exist in Milvus. Duplicate detected.")
                         return {
                             "status": "skipped",
                             "message": f"Document {file_name} already exists in database. Skipped. (All chunks present, no duplicate ingested)",
@@ -291,16 +291,16 @@ class IngestionService:
                     logger.error(f"Error during duplicate/verification check for {file_name}: {e}")
                     return {"status": "error", "message": f"Verification error after failed insert: {str(e)}", "file_name": file_name}
 
-            # Post-ingest verification: query ChromaDB for all new ids
+            # Post-ingest verification: query Milvus for all new ids
             try:
-                verify_result = self.vector_db_client.collection.get(ids=ids)
+                verify_result = self.vector_db_client.get_documents_by_ids(ids)
                 found_ids = verify_result.get("ids", []) if verify_result else []
                 missing_ids = [i for i in ids if i not in found_ids]
                 if not found_ids or len(found_ids) < len(ids):
-                    logger.error(f"Post-ingest verification failed for {file_name}: {len(missing_ids)} chunks missing in ChromaDB")
+                    logger.error(f"Post-ingest verification failed for {file_name}: {len(missing_ids)} chunks missing in Milvus")
                     return {
                         "status": "error",
-                        "message": f"Post-ingest verification failed: {len(missing_ids)} chunks missing in ChromaDB",
+                        "message": f"Post-ingest verification failed: {len(missing_ids)} chunks missing in Milvus",
                         "file_name": file_name,
                         "missing_ids": missing_ids
                     }
@@ -308,7 +308,7 @@ class IngestionService:
                 logger.error(f"Error during post-ingest verification for {file_name}: {e}")
                 return {"status": "error", "message": f"Post-ingest verification error: {str(e)}", "file_name": file_name}
 
-            logger.info(f"Successfully ingested {file_name} with {len(chunks)} chunks and verified in ChromaDB")
+            logger.info(f"Successfully ingested {file_name} with {len(chunks)} chunks and verified in Milvus")
             return {
                 "status": "success",
                 "message": f"Document {file_name} ingested and verified successfully (all {len(ids)} chunks present)",

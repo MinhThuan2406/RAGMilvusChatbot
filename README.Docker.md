@@ -15,7 +15,7 @@ docker compose up --build
 
 Service URLs:
 - Backend API: [http://localhost:8001](http://localhost:8001)
-- ChromaDB: [http://localhost:8000](http://localhost:8000)
+- Milvus: [http://localhost:19530](http://localhost:19530)
 - Ollama: [http://localhost:11434](http://localhost:11434)
 - Web UI: [http://localhost:3000](http://localhost:3000)
 
@@ -34,8 +34,8 @@ Service URLs:
 All main configuration is handled via the `.env` file in the project root. Example variables:
 
 ```env
-CHROMA_HOST=vector-db
-CHROMA_PORT=8000
+MILVUS_HOST=milvus-db
+MILVUS_PORT=19530
 OLLAMA_HOST=ollama-llm
 OLLAMA_PORT=11434
 RAG_API_PORT=8001
@@ -85,7 +85,7 @@ You can use [Ngrok](https://ngrok.com/) to share your local services for quick d
 
 **Expose other ports:**
    - For the UI: `ngrok http --region=ap 3000`
-   - For ChromaDB: `ngrok http --region=ap 8000`
+   - For Milvus: `ngrok http --region=ap 19530`
 
 **Security note:** For production or sensitive data, always use authentication and HTTPS with Ngrok.
 
@@ -140,4 +140,4 @@ You can use [Ngrok](https://ngrok.com/) to share your local services for quick d
 
 ## 📚 References
 - [Docker's Python guide](https://docs.docker.com/language/python/)
-- [ChromaDB Getting Started](https://docs.trychroma.com/docs/overview/getting-started)
+- [Milvus Getting Started](https://milvus.io/docs/)

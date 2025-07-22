@@ -1,10 +1,10 @@
 import os
-from ..db.chroma_client import ChromaDBClient
+from ..db.milvus_client import MilvusDBClient
 from .llm_provider_factory import LLMFactory
 from app.services.ingestion_service import AsyncEmbeddingFunction
 
 class RAGService:
-    def __init__(self, provider: str = '', chroma_host=None, chroma_port=None):
+    def __init__(self, provider: str = '', milvus_host=None, milvus_port=None):
         self.llm_client = LLMFactory.get_llm_client(provider)
         if provider == "ollama":
             self.embedding_client = LLMFactory.get_embedding_client("openai")
@@ -15,9 +15,9 @@ class RAGService:
 
         embedding_function = AsyncEmbeddingFunction(self.embedding_client, name=embedding_provider)
         if "PYTEST_CURRENT_TEST" not in os.environ:
-            self.vector_db_client = ChromaDBClient(
-                host=chroma_host,
-                port=chroma_port,
+            self.vector_db_client = MilvusDBClient(
+                host=milvus_host,
+                port=milvus_port,
                 embedding_function=embedding_function
             )
         else:

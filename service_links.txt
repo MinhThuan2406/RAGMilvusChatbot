@@ -2,17 +2,17 @@
 
 ## Main Services
 - FastAPI backend (rag-api): http://localhost:8001
-- ChromaDB vector database: http://localhost:8000
+- Milvus vector database: http://localhost:19530
 - Ollama LLM API: http://localhost:11434
 - Chatbot UI: http://localhost:3000
 
 ## Internal Service URLs (Docker Compose)
-- ChromaDB (from backend): http://vector-db:8000
+- Milvus (from backend): milvus-db:19530
 - Ollama (from backend): http://ollama-llm:11434
 
 ## Documentation & References
 - Docker's Python guide: https://docs.docker.com/language/python/
-- ChromaDB Getting Started: https://docs.trychroma.com/docs/overview/getting-started
+- Milvus Getting Started: https://milvus.io/docs
 
 ## Example API Endpoints
 - Chat endpoint: http://localhost:8001/api/chat/

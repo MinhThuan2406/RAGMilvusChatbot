@@ -3,7 +3,7 @@
 ## Project Context
 
 - This repository is a modular, containerized Retrieval-Augmented Generation (RAG) chatbot system.
-- It uses FastAPI for the backend, ChromaDB for vector storage, Ollama and OpenAI as LLM providers, and Streamlit/OpenWebUI for the frontend.
+- It uses FastAPI for the backend, Milvus for vector storage, Ollama and OpenAI as LLM providers, and Streamlit/OpenWebUI for the frontend.
 - All services are orchestrated with Docker Compose and support both local and cloud deployments.
 - Codebase is Python 3.11+ (some containers use 3.13), with async/await patterns and type hints.
 
@@ -24,7 +24,7 @@
 ## Project-Specific Guidelines
 
 - **Backend API**: Use FastAPI routers, pydantic models, and async endpoints.
-- **Vector DB**: Use ChromaDB’s HTTP client; do not assume a web UI exists.
+- **Vector DB**: Use Milvus via pymilvus client; do not assume a web UI exists.
 - **LLM Providers**: Use adapters for Ollama and OpenAI; fallback to OpenAI for embeddings if Ollama is selected.
 - **Environment Variables**: All config (API keys, hosts, ports) must be loaded from environment variables or `.env`.
 - **Docker**: All new services or scripts should be containerizable and use environment variables for config.

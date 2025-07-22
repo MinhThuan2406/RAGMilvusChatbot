@@ -9,8 +9,7 @@ Define the task to achieve, including specific requirements, constraints, and su
 **Task**:  
 Describe the specific feature, bugfix, or improvement to be implemented in the RAGChatbot project. Reference relevant modules (e.g., `backend/app/services/ingestion_service.py`, `frontend/`, etc.).
 
-**Requirements**:  
-- List technical or architectural requirements (e.g., must use FastAPI, integrate with ChromaDB, follow adapter pattern).
+- List technical or architectural requirements (e.g., must use FastAPI, integrate with Milvus, follow adapter pattern).
 - Specify any coding conventions or patterns to follow (see `DEVELOPER_GUIDE.md`).
 - Note any workflow constraints (e.g., must work with Docker Compose, use `.env` config).
 
@@ -31,7 +30,7 @@ Add support for ingesting `.md` (Markdown) files in the document ingestion pipel
 
 Requirements:  
 - Extend `DocumentProcessor` in `backend/app/services/ingestion_service.py` to detect and process `.md` files.
-- Extract text content, chunk appropriately, and store embeddings in ChromaDB.
+- Extract text content, chunk appropriately, and store embeddings in Milvus.
 - Update tests in `backend/tests/` to cover Markdown ingestion.
 
 Success Criteria:  
@@ -42,7 +41,7 @@ Success Criteria:
 Dependencies:  
 - `backend/app/services/ingestion_service.py`
 - `backend/tests/`
-- ChromaDB container
+- Milvus container
 
 ---
 

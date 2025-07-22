@@ -71,7 +71,7 @@ Status: Completed
 Progress: 100%
 Start date: 2025-07-21
 End date: 2025-07-21
-Task 3: Cải tiến ChromaDB client, chuẩn hóa interface và debug (backend/app/db/chroma_client.py)
+Task 3: Cải tiến Milvus client, chuẩn hóa interface và debug (backend/app/db/milvus_client.py)
 Status: Completed
 Progress: 100%
 Start date: 2025-07-21
@@ -86,13 +86,13 @@ End date: 2025-07-21
 Task 1: Viết thêm test cho các adapter và service ingestion mới refactor
 Target Progress: 50%
 End date (dự kiến): 2025-07-22
-Task 2: Kiểm thử tích hợp end-to-end với ChromaDB và Ollama qua Docker Compose
+Task 2: Kiểm thử tích hợp end-to-end với Milvus và Ollama qua Docker Compose
 Target Progress: 50%
 End date (dự kiến): 2025-07-22
 
 **3. Khó khăn / vướng mắc (nếu có)**
-- Một số interface của ChromaDB và Ollama chưa thống nhất, cần kiểm thử thực tế để đảm bảo tương thích.
-- Việc mock/test ChromaDB cần chú ý khi chạy pytest (đã có conftest.py hỗ trợ).
+- Một số interface của Milvus và Ollama chưa thống nhất, cần kiểm thử thực tế để đảm bảo tương thích.
+- Việc mock/test Milvus cần chú ý khi chạy pytest (đã có conftest.py hỗ trợ).
 
 **4. Tài nguyên và công cụ hỗ trợ**
 Nền tảng, phần mềm:

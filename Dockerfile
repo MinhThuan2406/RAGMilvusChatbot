@@ -69,7 +69,7 @@ RUN mkdir -p /app/.cache /app/data /app/.local && \
     chown -R appuser:appuser /app/.cache /app/data /app/.local
 
 ENV USER_AGENT="RAGChatbot/1.0"
-ENV CHROMA_TELEMETRY_ENABLED="false"
+ENV MILVUS_TELEMETRY_ENABLED="false"
 
 # Switch to non-root user
 USER appuser
