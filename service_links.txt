@@ -1,0 +1,20 @@
+# Service and API Links for RAGChatbot
+
+## Main Services
+- FastAPI backend (rag-api): http://localhost:8001
+- ChromaDB vector database: http://localhost:8000
+- Ollama LLM API: http://localhost:11434
+- Chatbot UI: http://localhost:3000
+
+## Internal Service URLs (Docker Compose)
+- ChromaDB (from backend): http://vector-db:8000
+- Ollama (from backend): http://ollama-llm:11434
+
+## Documentation & References
+- Docker's Python guide: https://docs.docker.com/language/python/
+- ChromaDB Getting Started: https://docs.trychroma.com/docs/overview/getting-started
+
+## Example API Endpoints
+- Chat endpoint: http://localhost:8001/api/chat/
+- Ingest endpoint: http://localhost:8001/api/ingest/upload
+

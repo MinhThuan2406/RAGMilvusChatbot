@@ -1,0 +1,54 @@
+# Core web framework & server
+fastapi[all]
+uvicorn
+gunicorn
+
+# Async HTTP clients
+httpx
+requests
+aiofiles>=23.0.0
+
+# Configuration & environment
+python-dotenv
+
+# Data validation & parsing
+pydantic
+
+# Testing stack
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+
+# LangChain ecosystem
+langchain
+openai>=0.28.0
+ollama>=0.1.0
+
+# Embedding & vector DB
+chromadb[openai]>=0.4.0
+sentence-transformers>=2.2.0
+
+# Document parsers & extractors
+pymupdf               # PDF parsing
+pdfminer.six          # PDF text extraction
+pdf2image             # PDF to image conversion
+pytesseract>=0.3.10   # OCR
+python-docx>=0.8.11   # .docx reader
+python-pptx           # .pptx reader
+docx2txt              # Alternative .docx extractor
+# python-docx2txt     # For legacy .doc support (optional)
+textract              # General-purpose extractor
+# textract==1.6.3     # Specific version for compatibility
+antiword              # .doc reader   
+openpyxl              # .xlsx reader
+six                   # Compatibility
+python-dateutil       # Date parsing
+python-magic          # MIME type detection
+Pillow>=9.5.0         # Image processing
+beautifulsoup4        # HTML parsing
+
+# Analytics & monitoring
+posthog
+rich>=13.0.0
+

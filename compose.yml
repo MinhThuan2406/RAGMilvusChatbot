@@ -1,0 +1,74 @@
+# version: '3.8'
+
+services:
+  vector-db:
+    build:
+      context: .
+      dockerfile: chromadb.Dockerfile
+    ports:
+      - "${CHROMA_PORT:-8000}:8000"
+    volumes:
+      - chroma-data:/data
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  ollama-llm:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    command: "serve"
+    restart: unless-stopped
+
+  rag-api:
+    build: .
+
+    # For debugging
+    # user: root
+
+    ports:
+      - "${RAG_API_PORT:-8001}:8001"
+    environment:
+      - CHROMA_HOST=${CHROMA_HOST:-vector-db}
+      - CHROMA_PORT=${CHROMA_PORT:-8000}
+      - OLLAMA_HOST=${OLLAMA_HOST:-ollama-llm}
+      - OLLAMA_PORT=${OLLAMA_PORT:-11434}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+    depends_on:
+      vector-db:
+        condition: service_healthy
+      ollama-llm:
+        condition: service_started
+    volumes:
+      # - ./data:/app/data
+      - rag-data:/app/data
+    restart: unless-stopped
+
+  chatbot-ui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "${CHATBOT_UI_PORT:-3000}:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      - OLLAMA_API_BASE_URL=${OLLAMA_API_BASE_URL:-http://ollama-llm:11434/api}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VECTOR_DB=chroma
+      - CHROMA_HOST=${CHROMA_HOST:-vector-db}
+      - CHROMA_PORT=${CHROMA_PORT:-8000}
+    depends_on:
+      rag-api:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  rag-data:
+  chroma-data:
+  ollama-models:
+  open-webui-data:
