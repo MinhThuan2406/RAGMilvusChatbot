@@ -6,8 +6,8 @@ from app.main import app
 @pytest.mark.asyncio
 async def test_chat_endpoint_real_integration():
     """
-    Integration test: This will hit the real ChromaDB and LLM endpoints.
-    Make sure ChromaDB and LLM services are running and accessible.
+    Integration test: This will hit the real Milvus and LLM endpoints.
+    Make sure Milvus and LLM services are running and accessible.
     """
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as ac:

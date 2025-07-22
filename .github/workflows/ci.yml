@@ -25,21 +25,21 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Start ChromaDB
+      - name: Start Milvus
         run: |
-          docker run -d --name chromadb -p 8000:8000 chromadb/chroma:0.4.24
+          docker run -d --name milvus-db -p 19530:19530 -p 9091:9091 milvusdb/milvus:v2.4.3
 
-      - name: Wait for ChromaDB to be ready
+      - name: Wait for Milvus to be ready
         run: |
           for i in {1..30}; do
-            if curl --fail http://localhost:8000/api/v2/heartbeat || curl --fail http://localhost:8000/api/v1/heartbeat; then
-              echo "ChromaDB is ready!"
+            if nc -z localhost 19530; then
+              echo "Milvus is ready!"
               exit 0
             fi
-            echo "Waiting for ChromaDB..."
+            echo "Waiting for Milvus..."
             sleep 10
           done
-          echo "ChromaDB did not become ready in time."
+          echo "Milvus did not become ready in time."
           exit 1
 
       - name: Lint with flake8
@@ -49,18 +49,17 @@ jobs:
 
       - name: Run tests
         env:
-          CHROMA_HOST: localhost
-          CHROMA_PORT: 8000
+          MILVUS_HOST: localhost
+          MILVUS_PORT: 19530
           PYTHONPATH: backend
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          # pytest backend/tests
           pytest backend/tests -m "not integration"
 
-      - name: Print ChromaDB logs
+      - name: Print Milvus logs
         if: failure()
-        run: docker logs chromadb
+        run: docker logs milvus-db
 
-      - name: Debug ChromaDB health endpoint
+      - name: Debug Milvus health endpoint
         run: |
-          curl -v http://localhost:8000/api/v2/heartbeat || curl -v http://localhost:8000/api/v1/heartbeat || curl -v http://localhost:8000/
+          nc -zv localhost 19530

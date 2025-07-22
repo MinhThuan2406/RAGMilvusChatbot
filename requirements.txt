@@ -1,3 +1,6 @@
+# Installer constraint for textract compatibility
+pip<24.1
+
 # Core web framework & server
 fastapi[all]
 uvicorn
@@ -26,7 +29,7 @@ openai>=0.28.0
 ollama>=0.1.0
 
 # Embedding & vector DB
-chromadb[openai]>=0.4.0
+pymilvus>=2.4.0
 sentence-transformers>=2.2.0
 
 # Document parsers & extractors
@@ -38,8 +41,7 @@ python-docx>=0.8.11   # .docx reader
 python-pptx           # .pptx reader
 docx2txt              # Alternative .docx extractor
 # python-docx2txt     # For legacy .doc support (optional)
-textract              # General-purpose extractor
-# textract==1.6.3     # Specific version for compatibility
+textract==1.6.3       # General-purpose extractor (compatible with pip <24.1)
 antiword              # .doc reader   
 openpyxl              # .xlsx reader
 six                   # Compatibility
@@ -49,6 +51,5 @@ Pillow>=9.5.0         # Image processing
 beautifulsoup4        # HTML parsing
 
 # Analytics & monitoring
-posthog
+posthog      
 rich>=13.0.0
-

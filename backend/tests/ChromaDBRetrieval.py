@@ -1,11 +1,7 @@
-import chromadb
+from pymilvus import connections, Collection
 
-client = chromadb.HttpClient(host="localhost", port=8000)
-
-collections = client.list_collections()
-print("Collections:", collections)
-collection = client.get_collection("docs")
-print("Number of embeddings:", collection.count())
-
-results = collection.get(limit=5)
+connections.connect(host="localhost", port=19530)
+collection = Collection("docs")
+print("Number of embeddings:", collection.num_entities)
+results = collection.query(expr=None, limit=5)
 print("Results:", results)

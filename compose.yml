@@ -1,19 +1,17 @@
 # version: '3.8'
 
 services:
-  vector-db:
-    build:
-      context: .
-      dockerfile: chromadb.Dockerfile
+
+  milvus-db:
+    image: milvusdb/milvus:v2.3.9
+    container_name: milvus-db
     ports:
-      - "${CHROMA_PORT:-8000}:8000"
+      - "${MILVUS_PORT:-19530}:19530"
+    environment:
+      - MILVUS_HOST=${MILVUS_HOST:-milvus-db}
+      - MILVUS_PORT=${MILVUS_PORT:-19530}
     volumes:
-      - chroma-data:/data
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "8000" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - milvus-data:/var/lib/milvus
     restart: unless-stopped
 
   ollama-llm:
@@ -34,15 +32,15 @@ services:
     ports:
       - "${RAG_API_PORT:-8001}:8001"
     environment:
-      - CHROMA_HOST=${CHROMA_HOST:-vector-db}
-      - CHROMA_PORT=${CHROMA_PORT:-8000}
+      - MILVUS_HOST=${MILVUS_HOST:-milvus-db}
+      - MILVUS_PORT=${MILVUS_PORT:-19530}
       - OLLAMA_HOST=${OLLAMA_HOST:-ollama-llm}
       - OLLAMA_PORT=${OLLAMA_PORT:-11434}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
     depends_on:
-      vector-db:
-        condition: service_healthy
+      milvus-db:
+        condition: service_started
       ollama-llm:
         condition: service_started
     volumes:
@@ -59,9 +57,9 @@ services:
     environment:
       - OLLAMA_API_BASE_URL=${OLLAMA_API_BASE_URL:-http://ollama-llm:11434/api}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - VECTOR_DB=chroma
-      - CHROMA_HOST=${CHROMA_HOST:-vector-db}
-      - CHROMA_PORT=${CHROMA_PORT:-8000}
+      - VECTOR_DB=milvus
+      - MILVUS_HOST=${MILVUS_HOST:-milvus-db}
+      - MILVUS_PORT=${MILVUS_PORT:-19530}
     depends_on:
       rag-api:
         condition: service_started
@@ -69,6 +67,6 @@ services:
 
 volumes:
   rag-data:
-  chroma-data:
+  milvus-data:
   ollama-models:
   open-webui-data:
