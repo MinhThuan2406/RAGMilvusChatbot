@@ -92,6 +92,10 @@ test_ingestion_api.py
 test_ingestion.py
 test_milvus_connection.py
 
+# Script files that might contain secrets
+backend/scripts/encrypt_secrets.py
+backend/scripts/setup_secrets.py
+
 # Model files
 miscellaneous/tf_model.h5
 
