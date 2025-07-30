@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 import os
 import aiofiles
 from pathlib import Path
-from app.services.ingestion_service import IngestionService
+from ..services.ingestion_service import IngestionService
 
 router = APIRouter()
 ingestion_service = IngestionService()

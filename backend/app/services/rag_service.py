@@ -1,7 +1,7 @@
 import os
 from ..db.milvus_client import MilvusDBClient
 from .llm_provider_factory import LLMFactory
-from app.services.ingestion_service import AsyncEmbeddingFunction
+from .ingestion_service import IngestionService
 
 class RAGService:
     def __init__(self, provider: str = '', milvus_host=None, milvus_port=None):
@@ -13,63 +13,68 @@ class RAGService:
             self.embedding_client = LLMFactory.get_embedding_client(provider)
             embedding_provider = provider
 
-        embedding_function = AsyncEmbeddingFunction(self.embedding_client, name=embedding_provider)
+        # Use the new ingestion service which handles fallback
         if "PYTEST_CURRENT_TEST" not in os.environ:
-            self.vector_db_client = MilvusDBClient(
-                host=milvus_host,
-                port=milvus_port,
-                embedding_function=embedding_function
-            )
+            self.ingestion_service = IngestionService()
         else:
-            self.vector_db_client = None
+            self.ingestion_service = None
 
     async def answer_query(self, query: str, file_name: str | None = None) -> str:
-        # 1. Create embedding for the query (Ollama)
+        # 1. Create embedding for the query
         print(f"[RETRIEVAL DEBUG] Query received: {query} (file_name: {file_name})")
         query_embedding = await self.embedding_client.create_embedding(query)
         print(f"[RETRIEVAL DEBUG] Query embedding: {query_embedding}")
 
-        # 2. Retrieve relevant documents, filtered by file_name if provided
-        filter_metadata = None
-        if file_name:
-            filter_metadata = {"source": file_name}
-
-        if self.vector_db_client:
-            # Try to filter by file_name if provided, else fallback
-            # Only use filtering if the method supports it; otherwise, fallback
-            import inspect
-            sig = inspect.signature(self.vector_db_client.query_documents)
-            filter_param = None
-            for candidate in ["where", "filters", "metadata_filter"]:
-                if candidate in sig.parameters:
-                    filter_param = candidate
-                    break
-            if filter_metadata and filter_param:
-                kwargs = {filter_param: filter_metadata}
-                print(f"[RETRIEVAL DEBUG] Querying vector DB with filter: {kwargs}")
-                retrieved_docs = self.vector_db_client.query_documents(query_texts=[query], n_results=3, **kwargs)
+        # 2. Retrieve relevant documents using the new ingestion service
+        if self.ingestion_service:
+            # Use the new search functionality
+            search_result = self.ingestion_service.search_documents(query, limit=3)
+            
+            if search_result["success"]:
+                retrieved_docs = search_result["results"]
+                print(f"[RETRIEVAL DEBUG] Retrieved documents: {len(retrieved_docs)}")
+                
+                # Filter by file_name if provided
+                if file_name:
+                    filtered_docs = [
+                        doc for doc in retrieved_docs 
+                        if doc.get("metadata", {}).get("filename") == file_name
+                    ]
+                    retrieved_docs = filtered_docs
+                    print(f"[RETRIEVAL DEBUG] Filtered to {len(retrieved_docs)} documents for file: {file_name}")
             else:
-                print(f"[RETRIEVAL DEBUG] Querying vector DB without filter.")
-                retrieved_docs = self.vector_db_client.query_documents(query_texts=[query], n_results=3)
+                print(f"[RETRIEVAL DEBUG] Search failed: {search_result.get('error')}")
+                retrieved_docs = []
         else:
             # Mocked response for test mode
             print(f"[RETRIEVAL DEBUG] Using mocked response for retrieval.")
-            retrieved_docs = {"documents": [["This is a mocked document."]], "metadatas": [[{"source": "mocked.pdf", "page": 1}]], "ids": [["mocked_id"]]}
+            retrieved_docs = [
+                {
+                    "content": "This is a mocked document.",
+                    "metadata": {"filename": "mocked.pdf", "source": "mocked.pdf"},
+                    "distance": 0.1,
+                    "id": "mocked_id"
+                }
+            ]
 
+        # 3. Build context from retrieved documents
         context = ""
-        documents = retrieved_docs.get('documents') if retrieved_docs else None
-        print(f"[RETRIEVAL DEBUG] Retrieved documents: {documents}")
-        if documents:
-            context = "\n".join([doc for sublist in documents if sublist for doc in sublist])
+        if retrieved_docs:
+            context_parts = []
+            for doc in retrieved_docs:
+                content = doc.get("content", "")
+                if content:
+                    context_parts.append(content)
+            context = "\n\n".join(context_parts)
             print(f"[RETRIEVAL DEBUG] Combined context for LLM: {context[:300]}... (truncated)")
 
-        # 3. Augment prompt with context
+        # 4. Augment prompt with context
         if context:
             prompt = f"Based on the following context, answer the question: {context}\n\nQuestion: {query}"
         else:
             prompt = f"No specific context found. Answer the question: {query}"
         print(f"[RETRIEVAL DEBUG] Final prompt to LLM: {prompt[:300]}... (truncated)")
 
-        # 4. Generate response (Ollama)
+        # 5. Generate response
         response = await self.llm_client.generate_response(prompt)
         return response

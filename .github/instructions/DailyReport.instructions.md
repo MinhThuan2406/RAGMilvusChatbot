@@ -102,8 +102,8 @@ Nền tảng, phần mềm:
 
 Tài liệu tham khảo:
 Hướng dẫn custom instructions cho GitHub Copilot: https://docs.github.com/en/copilot/how-tos/custom-instructions/adding-repository-custom-instructions-for-github-copilot
-https://docs.trychroma.com/docs/embeddings/embedding-functions
-https://docs.trychroma.com/integrations/embedding-models/openai
+https://milvus.io/docs/embeddings.md
+https://milvus.io/docs/integrations/openai.md
 
 File báo cáo & source code:
 1. Daily Report 2025-Jul-17.docx (file báo cáo)

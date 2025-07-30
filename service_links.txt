@@ -3,12 +3,12 @@
 ## Main Services
 - FastAPI backend (rag-api): http://localhost:8001
 - Milvus vector database: http://localhost:19530
-- Ollama LLM API: http://localhost:11434
+-- Ollama LLM API: http://localhost:11435
 - Chatbot UI: http://localhost:3000
 
 ## Internal Service URLs (Docker Compose)
 - Milvus (from backend): milvus-db:19530
-- Ollama (from backend): http://ollama-llm:11434
+-- Ollama (from backend): http://ollama-llm:11435
 
 ## Documentation & References
 - Docker's Python guide: https://docs.docker.com/language/python/

@@ -1,34 +1,127 @@
 # version: '3.8'
 
 services:
+  # etcd metadata store for Milvus
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ./data/backend/etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls=http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: [ "CMD", "etcdctl", "endpoint", "health" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+
+  # MinIO object storage for Milvus
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ./data/backend/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
 
   milvus-db:
-    image: milvusdb/milvus:v2.3.9
+    image: milvusdb/milvus:v2.1.4
     container_name: milvus-db
     ports:
       - "${MILVUS_PORT:-19530}:19530"
     environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+      - MINIO_BUCKET=milvus-bucket
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
       - MILVUS_HOST=${MILVUS_HOST:-milvus-db}
       - MILVUS_PORT=${MILVUS_PORT:-19530}
+      # Standalone configuration
+      - MILVUS_STANDALONE=true
+      - MILVUS_COMMON_STORAGETYPE=local
+      - MILVUS_AUTH_ENABLED=false
+      # Logging configuration
+      - MILVUS_COMMON_LOG_FORMAT=text
+      - MILVUS_COMMON_LOG_LEVEL=info
+      - MILVUS_COMMON_LOG_FILE=stdout
+      # Disable complex features
+      - MILVUS_COMMON_QUOTA_ENABLED=false
+      - MILVUS_COMMON_QUOTAS_ENABLED=false
+      - MILVUS_COMMON_ENABLE_QUOTA_AND_LIMITS=false
+      - MILVUS_COMMON_ENABLE_ACCESS_LOG=false
+      - MILVUS_COMMON_ENABLE_ERROR_LOG=false
+      - MILVUS_COMMON_ENABLE_QUERY_LOG=false
+      - MILVUS_COMMON_ENABLE_TRACE_LOG=false
+      - MILVUS_COMMON_ENABLE_METRICS=false
+      - MILVUS_COMMON_ENABLE_HEALTH_CHECK=false
+      - MILVUS_COMMON_ENABLE_DEBUG_LOG=false
+      - MILVUS_COMMON_ENABLE_INFO_LOG=false
+      - MILVUS_COMMON_ENABLE_WARN_LOG=false
+      # Memory and performance settings
+      - MILVUS_COMMON_MEMORY_LIMIT=256MB
+      - MILVUS_COMMON_GRACEFUL_TIME=10
+      - MILVUS_COMMON_RETENTION_DURATION=0
+      - MILVUS_COMMON_GC_INTERVAL=3600
+      - MILVUS_COMMON_GC_MISSING_TOLERANCE=0
+      # Disable RocksMQ
+      - MILVUS_COMMON_ENABLE_ROCKSMQ=false
+      - MILVUS_COMMON_ROCKSMQ_PATH=/var/lib/milvus/rocksmq
     volumes:
-      - milvus-data:/var/lib/milvus
+      - ./data/backend/vector_db:/var/lib/milvus
     restart: unless-stopped
+    command: milvus run standalone
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:19530/v1/health" ]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 300s
+    env_file:
+      - .env
 
   ollama-llm:
     image: ollama/ollama:latest
+    container_name: ollama-llm
     ports:
       - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollama-models:/root/.ollama
     command: "serve"
     restart: unless-stopped
+    # healthcheck:
+    #   test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
+    env_file:
+      - .env
 
   rag-api:
+    container_name: ragmilvuschatbot
     build: .
-
-    # For debugging
-    # user: root
-
     ports:
       - "${RAG_API_PORT:-8001}:8001"
     environment:
@@ -36,20 +129,29 @@ services:
       - MILVUS_PORT=${MILVUS_PORT:-19530}
       - OLLAMA_HOST=${OLLAMA_HOST:-ollama-llm}
       - OLLAMA_PORT=${OLLAMA_PORT:-11434}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - SECRETS_ENCRYPTION_KEY=${SECRETS_ENCRYPTION_KEY}
     depends_on:
       milvus-db:
         condition: service_started
       ollama-llm:
         condition: service_started
     volumes:
-      # - ./data:/app/data
-      - rag-data:/app/data
+      - ./data:/app/data
+      - ./.env.secrets:/app/.env.secrets:ro
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    env_file:
+      - .env
 
   chatbot-ui:
     image: ghcr.io/open-webui/open-webui:main
+    container_name: chatbot-ui
     ports:
       - "${CHATBOT_UI_PORT:-3000}:8080"
     volumes:
@@ -57,13 +159,12 @@ services:
     environment:
       - OLLAMA_API_BASE_URL=${OLLAMA_API_BASE_URL:-http://ollama-llm:11434/api}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - VECTOR_DB=milvus
-      - MILVUS_HOST=${MILVUS_HOST:-milvus-db}
-      - MILVUS_PORT=${MILVUS_PORT:-19530}
     depends_on:
       rag-api:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
+    env_file:
+      - .env
 
 volumes:
   rag-data:

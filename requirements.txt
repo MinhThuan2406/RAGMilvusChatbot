@@ -1,55 +1,18 @@
-# Installer constraint for textract compatibility
-pip<24.1
-
-# Core web framework & server
-fastapi[all]
-uvicorn
-gunicorn
-
-# Async HTTP clients
-httpx
-requests
-aiofiles>=23.0.0
-
-# Configuration & environment
-python-dotenv
-
-# Data validation & parsing
-pydantic
-
-# Testing stack
-pytest
-pytest-asyncio
-pytest-cov
-pytest-mock
-
-# LangChain ecosystem
-langchain
-openai>=0.28.0
-ollama>=0.1.0
-
-# Embedding & vector DB
-pymilvus>=2.4.0
-sentence-transformers>=2.2.0
-
-# Document parsers & extractors
-pymupdf               # PDF parsing
-pdfminer.six          # PDF text extraction
-pdf2image             # PDF to image conversion
-pytesseract>=0.3.10   # OCR
-python-docx>=0.8.11   # .docx reader
-python-pptx           # .pptx reader
-docx2txt              # Alternative .docx extractor
-# python-docx2txt     # For legacy .doc support (optional)
-textract==1.6.3       # General-purpose extractor (compatible with pip <24.1)
-antiword              # .doc reader   
-openpyxl              # .xlsx reader
-six                   # Compatibility
-python-dateutil       # Date parsing
-python-magic          # MIME type detection
-Pillow>=9.5.0         # Image processing
-beautifulsoup4        # HTML parsing
-
-# Analytics & monitoring
-posthog      
-rich>=13.0.0
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+pymilvus==2.1.3
+openai>=1.6.1,<2.0.0
+langchain==0.0.350
+langchain-openai==0.0.2
+pdfminer.six==20221105
+python-docx==1.1.0
+pytesseract==0.3.10
+Pillow==10.1.0
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+httpx==0.25.2
+aiofiles==23.2.1
+prometheus-client>=0.22.0
+psutil>=5.9.0

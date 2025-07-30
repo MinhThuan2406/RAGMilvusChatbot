@@ -7,7 +7,7 @@
   - `frontend/`: Streamlit or Open WebUI frontend (user chat interface)
   - `data/raw_docs/`: Directory for user-uploaded documents to be ingested
   - `scripts/`: Utility scripts (e.g., `ingest_initial_data.py` for bulk ingestion)
-  - **Vector DB:** ChromaDB (stores embeddings)
+  - **Vector DB:** Milvus (stores embeddings)
   - **LLM Provider:** Ollama (local LLM inference)
   - **Orchestration:** Docker Compose
 
@@ -40,7 +40,7 @@
   - Tests in `backend/tests/` use pytest
 
 ## Integration & External Dependencies
-- **ChromaDB** (vector DB): runs as a container, see `compose.yml`
+- **Milvus** (vector DB): runs as a container, see `compose.yml`
 - **Ollama** (LLM): runs as a container, see `compose.yml`
 - **OpenAI API key** required for embeddings (set in `.env`)
 - **Ngrok**: for remote access, see `README.Docker.md`

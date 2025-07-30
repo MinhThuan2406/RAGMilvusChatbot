@@ -16,7 +16,7 @@ docker compose up --build
 Service URLs:
 - Backend API: [http://localhost:8001](http://localhost:8001)
 - Milvus: [http://localhost:19530](http://localhost:19530)
-- Ollama: [http://localhost:11434](http://localhost:11434)
+- Ollama: [http://localhost:11435](http://localhost:11435)
 - Web UI: [http://localhost:3000](http://localhost:3000)
 
 ---
@@ -37,7 +37,7 @@ All main configuration is handled via the `.env` file in the project root. Examp
 MILVUS_HOST=milvus-db
 MILVUS_PORT=19530
 OLLAMA_HOST=ollama-llm
-OLLAMA_PORT=11434
+OLLAMA_PORT=11436
 RAG_API_PORT=8001
 CHATBOT_UI_PORT=3000
 OPENAI_API_KEY=your-key

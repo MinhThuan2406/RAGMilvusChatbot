@@ -11,4 +11,7 @@ def check_milvus_connection(host: str, port: int):
         return False
 
 # Example usage (Milvus host name & port)
-check_milvus_connection("localhost", 19530)
+import os
+host = os.getenv("MILVUS_HOST", "milvus-db")
+port = int(os.getenv("MILVUS_PORT", 19530))
+check_milvus_connection(host, port)
