@@ -22,6 +22,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Installer logs
 pip-log.txt
@@ -69,7 +70,48 @@ data/store_docs/
 *.sqlite3
 *.db
 
-# Ignore secrets
+# Ignore secrets and confidential files
 .env
+.env.*
+*.secrets
 FrequentUsedCommands.txt
 DockerCommands.txt
+
+# Database and data directories
+data/backend/
+data/chroma_db/
+data/raw_docs/
+data/store_docs/
+
+# Test files that might contain secrets
+test_secret_decrypt.py
+test_container_debug.py
+test_container_ingestion.py
+test_embedding_debug.py
+test_ingestion_api.py
+test_ingestion.py
+test_milvus_connection.py
+
+# Model files
+miscellaneous/tf_model.h5
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
